@@ -1,13 +1,14 @@
 name: CD - Deploy on EC2
 
 on:
-  workflow_dispatch:
-  push:
-    branches:
-      - main
+  workflow_run:
+    workflows: ["CI - Build and Push Docker Image"]  # 👈 listens to the CI workflow
+    types:
+      - completed
 
 jobs:
   deploy:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}  # only if CI succeeded
     runs-on: ubuntu-latest
 
     steps:
@@ -22,10 +23,12 @@ jobs:
       - name: Deploy on EC2
         run: |
           ssh -o StrictHostKeyChecking=no -i private_key.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+            echo "🚀 Deploying new Docker image..."
             sudo docker stop ecommerce-app || true
             sudo docker rm ecommerce-app || true
             sudo docker rmi ${{ secrets.DOCKER_USERNAME }}/ecommerce-app:latest || true
             sudo docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
             sudo docker pull ${{ secrets.DOCKER_USERNAME }}/ecommerce-app:latest
             sudo docker run -d -p 80:3000 --name ecommerce-app ${{ secrets.DOCKER_USERNAME }}/ecommerce-app:latest
+            echo "✅ Deployment Complete!"
           EOF
