@@ -246,4 +246,4 @@ For support, email support@ecommerce-app.com or create an issue in the repositor
 
 ---
 
-**Made with ❤️ for e-commerce**
+**Made with <❤️> for e-commerce**
